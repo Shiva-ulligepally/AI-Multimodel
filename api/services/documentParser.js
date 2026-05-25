@@ -67,7 +67,8 @@ export const extractTextFromDocument = async (urlOrPath, mimeType) => {
     
     throw new Error(`Unsupported file type: ${ext}`);
   } catch (error) {
-    console.error(`[Document Parser Error] ${error.message}`);
-    throw new Error(`Failed to extract text: ${error.message}`);
+    const errorMsg = error ? (error.message || error) : 'Unknown parsing error';
+    console.error('[Document Parser Error]', error);
+    throw new Error(`Failed to extract text: ${errorMsg}`);
   }
 };

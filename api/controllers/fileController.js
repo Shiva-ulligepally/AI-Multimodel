@@ -255,13 +255,14 @@ export const uploadFile = async (req, res) => {
       });
 
     } catch (processError) {
-      console.error(`[File Controller Error] Ingestion failed for ${originalname}:`, processError.message);
+      const errorMessage = processError ? (processError.message || processError) : 'Unknown ingestion error';
+      console.error(`[File Controller Error] Ingestion failed for ${originalname}:`, processError);
       
       try {
         const fileExists = await UploadedFile.findById(fileRecord._id);
         if (fileExists) {
           fileRecord.processedState = 'failed';
-          fileRecord.error = processError.message;
+          fileRecord.error = String(errorMessage);
           await fileRecord.save();
         }
       } catch (saveErr) {
@@ -269,14 +270,15 @@ export const uploadFile = async (req, res) => {
       }
 
       return res.status(500).json({
-        error: `File parsing failed during AI analysis: ${processError.message}`,
+        error: `File parsing failed during AI analysis: ${errorMessage}`,
         file: fileRecord
       });
     }
 
   } catch (error) {
-    console.error('[File Controller Error] Fatal upload crash:', error.message);
-    res.status(500).json({ error: `Fatal server upload error: ${error.message}` });
+    const errorMsg = error ? (error.message || error) : 'Unknown fatal error';
+    console.error('[File Controller Error] Fatal upload crash:', error);
+    res.status(500).json({ error: `Fatal server upload error: ${errorMsg}` });
   }
 };
 

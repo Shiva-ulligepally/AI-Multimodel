@@ -47,8 +47,9 @@ export const performOCR = async (imageUrl) => {
     console.log(`[OCR Service] OCR Complete. Extracted ${words.length} words.`);
     return { text, words };
   } catch (error) {
-    console.error(`[OCR Service Error] ${error.message}`);
-    throw new Error(`OCR failed: ${error.message}`);
+    const errorMsg = error ? (error.message || error) : 'Unknown OCR error';
+    console.error('[OCR Service Error]', error);
+    throw new Error(`OCR failed: ${errorMsg}`);
   } finally {
     if (worker) {
       try {
