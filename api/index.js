@@ -8,6 +8,7 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 
 import connectDB from './config/db.js';
 import fileRoutes from './routes/fileRoutes.js';
@@ -65,12 +66,26 @@ app.use('/uploads', express.static(TEMP_DIR));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
+  const readyState = mongoose.connection.readyState;
+  const states = {
+    0: 'Disconnected',
+    1: 'Connected',
+    2: 'Connecting',
+    3: 'Disconnecting'
+  };
+
   res.status(200).json({
     status: 'Healthy',
     service: 'DocuMind AI Multimodal Analyzer API',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'production',
     version: '1.0.0',
+    database: {
+      state: states[readyState] || 'Unknown',
+      connected: readyState === 1,
+      hasUri: !!process.env.MONGO_URI,
+      maskedUri: process.env.MONGO_URI ? process.env.MONGO_URI.replace(/:([^@]+)@/, ':****@') : 'Undefined'
+    }
   });
 });
 
