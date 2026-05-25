@@ -81,7 +81,17 @@ function createMockModel(modelName) {
 
 // Ensure DB connection
 const connectDB = async () => {
-  const MONGO_URI = process.env.MONGO_URI;
+  let MONGO_URI = process.env.MONGO_URI;
+
+  if (MONGO_URI) {
+    MONGO_URI = MONGO_URI.trim();
+    // Strip accidental prefix if user pasted the key name in Vercel value field
+    if (MONGO_URI.startsWith('MONGO_URI=')) {
+      MONGO_URI = MONGO_URI.replace('MONGO_URI=', '').trim();
+    } else if (MONGO_URI.startsWith('MONGODB_URI=')) {
+      MONGO_URI = MONGO_URI.replace('MONGODB_URI=', '').trim();
+    }
+  }
 
   if (!MONGO_URI) {
     console.warn('[DB Config] MONGO_URI not set. Using local JSON mock database.');
