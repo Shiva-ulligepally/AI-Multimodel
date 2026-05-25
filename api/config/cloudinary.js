@@ -2,6 +2,7 @@ import cloudinary from 'cloudinary';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
