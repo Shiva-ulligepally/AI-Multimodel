@@ -36,17 +36,17 @@ fi
 echo "✅ Root dependencies installed"
 echo ""
 
-# Install frontend dependencies
-echo "📦 Installing frontend dependencies..."
-cd frontend
+# Install client dependencies
+echo "📦 Installing client dependencies..."
+cd client
 npm install
 
 if [ $? -ne 0 ]; then
-    echo "❌ Failed to install frontend dependencies"
+    echo "❌ Failed to install client dependencies"
     exit 1
 fi
 
-echo "✅ Frontend dependencies installed"
+echo "✅ Client dependencies installed"
 cd ..
 echo ""
 

@@ -41,19 +41,19 @@ if %ERRORLEVEL% NEQ 0 (
 echo ✅ Root dependencies installed
 echo.
 
-REM Install frontend dependencies
-echo 📦 Installing frontend dependencies...
-cd frontend
+REM Install client dependencies
+echo 📦 Installing client dependencies...
+cd client
 call npm install
 
 if %ERRORLEVEL% NEQ 0 (
-    echo ❌ Failed to install frontend dependencies
+    echo ❌ Failed to install client dependencies
     cd ..
     pause
     exit /b 1
 )
 
-echo ✅ Frontend dependencies installed
+echo ✅ Client dependencies installed
 cd ..
 echo.
 
