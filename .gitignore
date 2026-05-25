@@ -31,6 +31,5 @@ Thumbs.db
 
 # Local uploads & OCR trained data files
 api/uploads/
-eng.traineddata
 tmp/
 /tmp/

@@ -17,7 +17,10 @@ export const performOCR = async (imageUrl) => {
   let worker = null;
   try {
     console.log(`[OCR Service] Starting Tesseract OCR for ${imageUrl}...`);
-    worker = await createWorker();
+    worker = await createWorker('eng', 1, {
+      langPath: process.cwd(),
+      cachePath: process.cwd(),
+    });
     
     let ocrTarget = imageUrl;
     if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
