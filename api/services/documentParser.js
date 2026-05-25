@@ -56,7 +56,9 @@ export const extractTextFromDocument = async (urlOrPath, mimeType) => {
       // For office files, write to temp and parse, then clean up
       const tempFile = path.join(TEMP_DIR, `doc_${Date.now()}.${ext}`);
       fs.writeFileSync(tempFile, buffer);
-      const extractedText = await officeParser.parseOfficeAsync(tempFile);
+      const extractedText = await officeParser.parseOfficeAsync(tempFile, {
+        tempFilesLocation: TEMP_DIR
+      });
       fs.unlinkSync(tempFile);
       return extractedText || 'No text found in Office document.';
     }
