@@ -7,6 +7,127 @@ import { performOCR } from '../services/ocrService.js';
 import { analyzeDocument, analyzeImage } from '../services/llmService.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary.js';
 
+// Robust sanitizers for LLM outputs to fit Mongoose Schemas
+const sanitizeSentiment = (sentiment) => {
+  const defaultSentiment = {
+    label: 'Neutral',
+    score: 0.5,
+    breakdown: { positive: 0.33, neutral: 0.34, negative: 0.33 }
+  };
+
+  if (!sentiment) return defaultSentiment;
+
+  // If sentiment is a string (e.g., "Neutral")
+  if (typeof sentiment === 'string') {
+    let label = 'Neutral';
+    const low = sentiment.toLowerCase();
+    if (low.includes('pos')) label = 'Positive';
+    else if (low.includes('neg')) label = 'Negative';
+    
+    return {
+      label,
+      score: label === 'Positive' ? 0.8 : label === 'Negative' ? 0.2 : 0.5,
+      breakdown: {
+        positive: label === 'Positive' ? 0.7 : label === 'Negative' ? 0.1 : 0.33,
+        neutral: label === 'Neutral' ? 0.7 : 0.2,
+        negative: label === 'Negative' ? 0.7 : label === 'Positive' ? 0.1 : 0.33
+      }
+    };
+  }
+
+  // If sentiment is an object
+  if (typeof sentiment === 'object' && sentiment !== null) {
+    let label = 'Neutral';
+    if (sentiment.label) {
+      const low = String(sentiment.label).toLowerCase();
+      if (low.includes('pos')) label = 'Positive';
+      else if (low.includes('neg')) label = 'Negative';
+    }
+
+    let score = typeof sentiment.score === 'number' ? sentiment.score : 0.5;
+    if (score < 0 || score > 1) score = 0.5;
+
+    const breakdown = {
+      positive: 0.33,
+      neutral: 0.34,
+      negative: 0.33
+    };
+
+    if (sentiment.breakdown && typeof sentiment.breakdown === 'object') {
+      breakdown.positive = typeof sentiment.breakdown.positive === 'number' ? sentiment.breakdown.positive : 0.33;
+      breakdown.neutral = typeof sentiment.breakdown.neutral === 'number' ? sentiment.breakdown.neutral : 0.34;
+      breakdown.negative = typeof sentiment.breakdown.negative === 'number' ? sentiment.breakdown.negative : 0.33;
+    } else {
+      // Check flattened fields
+      breakdown.positive = typeof sentiment.positive === 'number' ? sentiment.positive : 0.33;
+      breakdown.neutral = typeof sentiment.neutral === 'number' ? sentiment.neutral : 0.34;
+      breakdown.negative = typeof sentiment.negative === 'number' ? sentiment.negative : 0.33;
+    }
+
+    return { label, score, breakdown };
+  }
+
+  return defaultSentiment;
+};
+
+const sanitizeKeywords = (keywords) => {
+  if (!keywords) return [];
+
+  // If it's an object of word -> count
+  if (typeof keywords === 'object' && !Array.isArray(keywords) && keywords !== null) {
+    return Object.entries(keywords).map(([word, val]) => ({
+      word: String(word),
+      count: typeof val === 'number' ? val : 1
+    }));
+  }
+
+  if (Array.isArray(keywords)) {
+    return keywords.map((item, idx) => {
+      if (typeof item === 'string') {
+        return { word: item, count: 1 };
+      }
+      if (typeof item === 'object' && item !== null) {
+        const word = item.word || item.keyword || item.key || item.text || `key_${idx}`;
+        const countVal = item.count !== undefined ? item.count : (item.frequency || item.freq || item.score || 1);
+        const count = typeof countVal === 'number' ? countVal : parseInt(countVal, 10) || 1;
+        return { word: String(word), count };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+
+  return [];
+};
+
+const sanitizeTopics = (topics) => {
+  if (!topics) return [];
+  if (typeof topics === 'string') {
+    return topics.split(',').map(t => t.trim()).filter(Boolean);
+  }
+  if (Array.isArray(topics)) {
+    return topics.map(t => String(t).trim()).filter(Boolean);
+  }
+  return [];
+};
+
+const sanitizeFlashcards = (flashcards) => {
+  if (!flashcards) return [];
+  if (Array.isArray(flashcards)) {
+    return flashcards.map((card, idx) => {
+      if (typeof card === 'object' && card !== null) {
+        const question = card.question || card.q || card.front || `Question ${idx + 1}`;
+        const answer = card.answer || card.a || card.back || `Answer ${idx + 1}`;
+        return { question: String(question), answer: String(answer) };
+      }
+      if (typeof card === 'string') {
+        return { question: card, answer: `Information about ${card}` };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+  return [];
+};
+
 /**
  * Handle file uploads, sync to Cloudinary, and run AI Analysis
  */
@@ -60,18 +181,18 @@ export const uploadFile = async (req, res) => {
         
         await Summary.create({
           fileId: fileRecord._id,
-          summaryText: analysisResult.summaryText,
-          keyPoints: analysisResult.keyPoints,
-          flashcards: analysisResult.flashcards,
-          highlights: analysisResult.highlights,
-          recommendations: analysisResult.recommendations
+          summaryText: analysisResult.summaryText || 'Document summary ready.',
+          keyPoints: sanitizeTopics(analysisResult.keyPoints),
+          flashcards: sanitizeFlashcards(analysisResult.flashcards),
+          highlights: sanitizeTopics(analysisResult.highlights),
+          recommendations: sanitizeTopics(analysisResult.recommendations)
         });
 
         await Transcript.create({
           fileId: fileRecord._id,
           sessionType: 'upload',
-          rawText: extractedText,
-          segments: [{ start: 0, end: 5, speaker: 'Document Text', text: extractedText.substring(0, 500) }]
+          rawText: extractedText || ' ',
+          segments: [{ start: 0, end: 5, speaker: 'Document Text', text: extractedText.substring(0, 500) || ' ' }]
         });
 
       } else if (category === 'image') {
@@ -84,16 +205,16 @@ export const uploadFile = async (req, res) => {
         await Transcript.create({
           fileId: fileRecord._id,
           sessionType: 'upload',
-          rawText: extractedText,
-          segments: [{ start: 0, end: 5, speaker: 'OCR Text', text: extractedText.substring(0, 500) }]
+          rawText: extractedText || ' ',
+          segments: [{ start: 0, end: 5, speaker: 'OCR Text', text: extractedText.substring(0, 500) || ' ' }]
         });
 
         await Summary.create({
           fileId: fileRecord._id,
           summaryText: analysisResult.explanation || 'Image analyzed via OCR',
-          keyPoints: [analysisResult.caption || 'Image Caption'],
+          keyPoints: sanitizeTopics([analysisResult.caption || 'Image Caption']),
           highlights: ocrWords.map(w => w.text).slice(0, 10),
-          recommendations: analysisResult.detectedObjects || []
+          recommendations: sanitizeTopics(analysisResult.detectedObjects || [])
         });
       }
 
@@ -101,13 +222,9 @@ export const uploadFile = async (req, res) => {
       const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
       await Analytics.create({
         fileId: fileRecord._id,
-        topics: analysisResult.topics || [],
-        keywords: analysisResult.keywords || [],
-        sentiment: analysisResult.sentiment || {
-          label: 'Neutral',
-          score: 0.5,
-          breakdown: { positive: 0.33, neutral: 0.34, negative: 0.33 }
-        },
+        topics: sanitizeTopics(analysisResult.topics),
+        keywords: sanitizeKeywords(analysisResult.keywords),
+        sentiment: sanitizeSentiment(analysisResult.sentiment),
         wordCount,
         extraStats: {
           ocrWordsCount: ocrWords.length,
@@ -115,9 +232,15 @@ export const uploadFile = async (req, res) => {
         }
       });
 
-      // Update file to completed
-      fileRecord.processedState = 'completed';
-      await fileRecord.save();
+      // Update file to completed (check if it was deleted mid-flight by user)
+      const fileExists = await UploadedFile.findById(fileRecord._id);
+      if (fileExists) {
+        fileRecord.processedState = 'completed';
+        await fileRecord.save();
+      } else {
+        console.warn(`[File Controller] File record ${fileRecord._id} was deleted during processing.`);
+        return res.status(404).json({ error: 'File was deleted during processing.' });
+      }
 
       console.log(`[File Controller] Ingestion & AI analysis completed for: ${originalname}`);
 
@@ -134,9 +257,16 @@ export const uploadFile = async (req, res) => {
     } catch (processError) {
       console.error(`[File Controller Error] Ingestion failed for ${originalname}:`, processError.message);
       
-      fileRecord.processedState = 'failed';
-      fileRecord.error = processError.message;
-      await fileRecord.save();
+      try {
+        const fileExists = await UploadedFile.findById(fileRecord._id);
+        if (fileExists) {
+          fileRecord.processedState = 'failed';
+          fileRecord.error = processError.message;
+          await fileRecord.save();
+        }
+      } catch (saveErr) {
+        console.error('[File Controller Error] Failed to update fail state:', saveErr.message);
+      }
 
       return res.status(500).json({
         error: `File parsing failed during AI analysis: ${processError.message}`,

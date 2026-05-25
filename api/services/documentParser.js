@@ -1,6 +1,9 @@
 import fetch from 'node-fetch';
 import pdfParse from 'pdf-parse';
 import officeParser from 'officeparser';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 /**
  * Extracts raw text from a document URL (Cloudinary) based on its MIME type
@@ -41,10 +44,10 @@ export const extractTextFromDocument = async (urlOrPath, mimeType) => {
     if (['docx', 'doc', 'pptx', 'ppt'].includes(ext) ||
         mimeType.includes('officedocument') || mimeType.includes('msword') || mimeType.includes('powerpoint')) {
       // For office files, write to temp and parse, then clean up
-      const tempFile = `/tmp/doc_${Date.now()}.${ext}`;
-      require('fs').writeFileSync(tempFile, buffer);
+      const tempFile = path.join(os.tmpdir(), `doc_${Date.now()}.${ext}`);
+      fs.writeFileSync(tempFile, buffer);
       const extractedText = await officeParser.parseOfficeAsync(tempFile);
-      require('fs').unlinkSync(tempFile);
+      fs.unlinkSync(tempFile);
       return extractedText || 'No text found in Office document.';
     }
 

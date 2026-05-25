@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DB_FILE_PATH = path.join(__dirname, '../../db_store.json');
+const DB_FILE_PATH = process.env.VERCEL 
+  ? '/tmp/db_store.json' 
+  : path.join(__dirname, '../../db_store.json');
 
 // Global mock indicator
 const useMockDB = { active: false };
@@ -87,17 +89,41 @@ const connectDB = async () => {
     return;
   }
 
+  // Skip if already connected (important for serverless reuse)
+  if (mongoose.connection.readyState === 1) {
+    console.log('[DB Config] Using existing MongoDB connection.');
+    return;
+  }
+
   try {
     console.log('[DB Config] Connecting to MongoDB...');
+    
+    // Optimized for Vercel serverless environment
     await mongoose.connect(MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      
+      // Connection pooling for serverless
+      maxPoolSize: 10,
+      minPoolSize: 5,
+      
+      // Timeout settings (important for serverless)
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      
+      // Prevent unneeded reconnection
+      retryWrites: true,
+      w: 'majority',
+      
+      // Connection name for debugging
+      appName: 'DocuMind-Vercel',
     });
-    console.log('[DB Config] Connected to MongoDB successfully.');
+    
+    console.log('[DB Config] ✅ Connected to MongoDB successfully.');
     useMockDB.active = false;
   } catch (err) {
     console.error('[DB Config Error]', err.message);
-    console.warn('[DB Config] Falling back to local JSON mock database.');
+    console.warn('[DB Config] ⚠️  Falling back to local JSON mock database.');
     useMockDB.active = true;
   }
 };

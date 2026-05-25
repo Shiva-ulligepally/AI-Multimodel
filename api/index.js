@@ -26,12 +26,14 @@ const app = express();
 connectDB();
 
 // Security & Production Middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}));
 app.use(compression());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  origin: true,
+  credentials: true
 }));
 
 // Rate limiting
@@ -45,6 +47,9 @@ app.use('/api/', limiter);
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static uploads for local fallback
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
@@ -82,6 +87,16 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
+
+// Start local dev server if executed directly and not on Vercel
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`\n======================================================`);
+    console.log(`🤖 DocuMind AI Server running on http://localhost:${PORT}`);
+    console.log(`======================================================\n`);
+  });
+}
 
 // Export app for Vercel
 export default app;

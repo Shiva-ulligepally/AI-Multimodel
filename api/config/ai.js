@@ -18,6 +18,7 @@ if (GEMINI_API_KEY) {
     console.error(`[AI Config Error] Could not initialize Gemini: ${err.message}`);
   }
 } else {
+  console.warn("Missing GEMINI_API_KEY");
   console.log('[AI Config Warning] GEMINI_API_KEY is not defined. Using mock responses.');
 }
 
@@ -29,6 +30,7 @@ if (OPENAI_API_KEY) {
     console.error(`[AI Config Error] Could not initialize OpenAI: ${err.message}`);
   }
 } else {
+  console.warn("Missing OPENAI_API_KEY");
   console.log('[AI Config Warning] OPENAI_API_KEY is not defined. Using mock responses.');
 }
 
