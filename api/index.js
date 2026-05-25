@@ -74,6 +74,14 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug Route
+app.get('/api/debug', (req, res) => {
+  res.json({
+    success: true,
+    message: "API Routes Working"
+  });
+});
+
 // API Routes
 app.use('/api/files', fileRoutes);
 app.use('/api/ai', aiRoutes);
