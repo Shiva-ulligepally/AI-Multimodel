@@ -22,7 +22,12 @@ export const extractTextFromDocument = async (urlOrPath, mimeType) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       buffer = await response.buffer();
     } else {
-      throw new Error('Local file paths not supported in Vercel. Use Cloudinary URLs only.');
+      // Local temp file path!
+      const fileName = path.basename(urlOrPath);
+      const localPath = path.join(os.tmpdir(), fileName);
+      console.log(`[Document Parser] Reading local file directly from temp: ${localPath}`);
+      if (!fs.existsSync(localPath)) throw new Error(`File not found in temp directory: ${fileName}`);
+      buffer = fs.readFileSync(localPath);
     }
 
     // Determine file type and extract

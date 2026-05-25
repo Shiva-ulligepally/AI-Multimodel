@@ -19,26 +19,19 @@ cloudinary.config({
 export const uploadToCloudinary = async (fileBuffer, fileName) => {
   // If Cloudinary credentials are not set, fall back to local storage
   if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-    console.log(`[Cloudinary Config] ⚠️ Cloudinary credentials missing. Falling back to local storage.`);
-    
-    // Ensure the api/uploads directory exists
-    const uploadsDir = path.join(__dirname, '..', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    console.log(`[Cloudinary Config] ⚠️ Cloudinary credentials missing. Falling back to local temp storage.`);
     
     // Clean fileName to be safe for filenames
     const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const filePath = path.join(uploadsDir, safeFileName);
+    const filePath = path.join(os.tmpdir(), safeFileName);
     
-    // Write buffer to file
+    // Write buffer to temp file (fully writable on both local and Vercel)
     fs.writeFileSync(filePath, fileBuffer);
     
-    const port = process.env.PORT || 5000;
-    // We return a mock Cloudinary response
+    // We return a mock response with a relative URL
     return {
       public_id: safeFileName,
-      secure_url: `http://localhost:${port}/uploads/${safeFileName}`
+      secure_url: `/uploads/${safeFileName}`
     };
   }
 
@@ -63,7 +56,7 @@ export const deleteFromCloudinary = async (publicId) => {
   if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
     console.log(`[Cloudinary Config] ⚠️ Local storage delete: ${publicId}`);
     try {
-      const filePath = path.join(__dirname, '..', 'uploads', publicId);
+      const filePath = path.join(os.tmpdir(), publicId);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

@@ -5,6 +5,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 import connectDB from './config/db.js';
@@ -48,8 +49,8 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve static uploads for local fallback
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static uploads for local fallback (fully writable on both local and Vercel)
+app.use('/uploads', express.static(os.tmpdir()));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

@@ -1,5 +1,7 @@
 import { createWorker } from 'tesseract.js';
 import fetch from 'node-fetch';
+import os from 'os';
+import path from 'path';
 
 /**
  * Performs OCR on an image URL (Cloudinary)
@@ -12,8 +14,15 @@ export const performOCR = async (imageUrl) => {
     console.log(`[OCR Service] Starting Tesseract OCR for ${imageUrl}...`);
     worker = await createWorker();
     
+    let ocrTarget = imageUrl;
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      const fileName = path.basename(imageUrl);
+      ocrTarget = path.join(os.tmpdir(), fileName);
+      console.log(`[OCR Service] Reading local file directly from temp: ${ocrTarget}`);
+    }
+
     // Tesseract can work with URLs directly
-    const { data } = await worker.recognize(imageUrl);
+    const { data } = await worker.recognize(ocrTarget);
     
     const text = data.text || '';
     const words = (data.words || []).map(w => ({
