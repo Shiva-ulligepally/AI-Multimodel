@@ -91,6 +91,35 @@ const connectDB = async () => {
     } else if (MONGO_URI.startsWith('MONGODB_URI=')) {
       MONGO_URI = MONGO_URI.replace('MONGODB_URI=', '').trim();
     }
+
+    // Auto-fix raw '@' or '>' or other special characters in password if the user didn't URL-encode it
+    try {
+      if (MONGO_URI.startsWith('mongodb+srv://') || MONGO_URI.startsWith('mongodb://')) {
+        const protocol = MONGO_URI.startsWith('mongodb+srv://') ? 'mongodb+srv://' : 'mongodb://';
+        const rest = MONGO_URI.slice(protocol.length);
+        
+        // Find the last '@' symbol which separates credentials from host
+        const lastAtIndex = rest.lastIndexOf('@');
+        if (lastAtIndex !== -1) {
+          const credentials = rest.slice(0, lastAtIndex);
+          const hostAndQuery = rest.slice(lastAtIndex + 1);
+          
+          // Split username and password
+          const colonIndex = credentials.indexOf(':');
+          if (colonIndex !== -1) {
+            const username = credentials.slice(0, colonIndex);
+            const password = credentials.slice(colonIndex + 1);
+            
+            // Auto-decode and then encode to safely URL-encode the password
+            const encodedPassword = encodeURIComponent(decodeURIComponent(password));
+            
+            MONGO_URI = `${protocol}${username}:${encodedPassword}@${hostAndQuery}`;
+          }
+        }
+      }
+    } catch (sanitizeErr) {
+      console.error('[DB Config] Auto-sanitize URI error:', sanitizeErr.message);
+    }
   }
 
   if (!MONGO_URI) {
