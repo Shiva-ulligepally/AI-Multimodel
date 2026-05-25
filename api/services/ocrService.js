@@ -3,6 +3,11 @@ import fetch from 'node-fetch';
 import os from 'os';
 import path from 'path';
 
+// Serverless writable /tmp configuration or local uploads folder
+const TEMP_DIR = process.env.VERCEL
+  ? '/tmp'
+  : path.join(process.cwd(), 'uploads');
+
 /**
  * Performs OCR on an image URL (Cloudinary)
  * @param {string} imageUrl - Cloudinary image URL
@@ -17,7 +22,7 @@ export const performOCR = async (imageUrl) => {
     let ocrTarget = imageUrl;
     if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
       const fileName = path.basename(imageUrl);
-      ocrTarget = path.join(os.tmpdir(), fileName);
+      ocrTarget = path.join(TEMP_DIR, fileName);
       console.log(`[OCR Service] Reading local file directly from temp: ${ocrTarget}`);
     }
 

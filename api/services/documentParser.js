@@ -5,6 +5,11 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
+// Serverless writable /tmp configuration or local uploads folder
+const TEMP_DIR = process.env.VERCEL
+  ? '/tmp'
+  : path.join(process.cwd(), 'uploads');
+
 /**
  * Extracts raw text from a document URL (Cloudinary) based on its MIME type
  * @param {string} urlOrPath - URL or local path to file
@@ -24,7 +29,7 @@ export const extractTextFromDocument = async (urlOrPath, mimeType) => {
     } else {
       // Local temp file path!
       const fileName = path.basename(urlOrPath);
-      const localPath = path.join(os.tmpdir(), fileName);
+      const localPath = path.join(TEMP_DIR, fileName);
       console.log(`[Document Parser] Reading local file directly from temp: ${localPath}`);
       if (!fs.existsSync(localPath)) throw new Error(`File not found in temp directory: ${fileName}`);
       buffer = fs.readFileSync(localPath);
@@ -49,7 +54,7 @@ export const extractTextFromDocument = async (urlOrPath, mimeType) => {
     if (['docx', 'doc', 'pptx', 'ppt'].includes(ext) ||
         mimeType.includes('officedocument') || mimeType.includes('msword') || mimeType.includes('powerpoint')) {
       // For office files, write to temp and parse, then clean up
-      const tempFile = path.join(os.tmpdir(), `doc_${Date.now()}.${ext}`);
+      const tempFile = path.join(TEMP_DIR, `doc_${Date.now()}.${ext}`);
       fs.writeFileSync(tempFile, buffer);
       const extractedText = await officeParser.parseOfficeAsync(tempFile);
       fs.unlinkSync(tempFile);

@@ -10,6 +10,11 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Serverless writable /tmp configuration or local uploads folder
+const TEMP_DIR = process.env.VERCEL
+  ? '/tmp'
+  : path.join(process.cwd(), 'uploads');
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -24,7 +29,7 @@ export const uploadToCloudinary = async (fileBuffer, fileName) => {
     
     // Clean fileName to be safe for filenames
     const safeFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const filePath = path.join(os.tmpdir(), safeFileName);
+    const filePath = path.join(TEMP_DIR, safeFileName);
     
     // Write buffer to temp file (fully writable on both local and Vercel)
     fs.writeFileSync(filePath, fileBuffer);
@@ -57,7 +62,7 @@ export const deleteFromCloudinary = async (publicId) => {
   if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
     console.log(`[Cloudinary Config] ⚠️ Local storage delete: ${publicId}`);
     try {
-      const filePath = path.join(os.tmpdir(), publicId);
+      const filePath = path.join(TEMP_DIR, publicId);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }

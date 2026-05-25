@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DB_FILE_PATH = process.env.VERCEL 
   ? '/tmp/db_store.json' 
-  : path.join(__dirname, '../../db_store.json');
+  : path.join(process.cwd(), 'db_store.json');
 
 // Global mock indicator
 const useMockDB = { active: false };

@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import os from 'os';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import connectDB from './config/db.js';
@@ -19,6 +20,16 @@ dotenv.config();
 // Resolve paths for ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Serverless writable /tmp configuration or local uploads folder
+const TEMP_DIR = process.env.VERCEL
+  ? '/tmp'
+  : path.join(process.cwd(), 'uploads');
+
+// Ensure directory exists locally
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
 
 // Initialize Express app
 const app = express();
@@ -50,7 +61,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static uploads for local fallback (fully writable on both local and Vercel)
-app.use('/uploads', express.static(os.tmpdir()));
+app.use('/uploads', express.static(TEMP_DIR));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
@@ -79,13 +90,11 @@ app.use((req, res) => {
 
 // Global Error Handler (must be last)
 app.use((err, req, res, next) => {
-  console.error('[Server Error]', err.message, err.stack);
-  
-  res.status(err.status || 500).json({
-    error: err.name || 'Internal Server Error',
-    message: err.message || 'An unexpected error occurred.',
-    timestamp: new Date().toISOString(),
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  console.error("SERVER ERROR:", err);
+
+  res.status(500).json({
+    success: false,
+    error: err.message
   });
 });
 
