@@ -41,19 +41,19 @@ if %ERRORLEVEL% NEQ 0 (
 echo ✅ Root dependencies installed
 echo.
 
-REM Install backend dependencies
-echo 📦 Installing backend dependencies...
-cd backend
+REM Install frontend dependencies
+echo 📦 Installing frontend dependencies...
+cd frontend
 call npm install
 
 if %ERRORLEVEL% NEQ 0 (
-    echo ❌ Failed to install backend dependencies
+    echo ❌ Failed to install frontend dependencies
     cd ..
     pause
     exit /b 1
 )
 
-echo ✅ Backend dependencies installed
+echo ✅ Frontend dependencies installed
 cd ..
 echo.
 
@@ -61,19 +61,11 @@ REM Verify .env files
 echo 🔍 Checking environment configuration...
 
 if not exist ".env" (
-    echo ⚠️  Frontend .env file not found. Creating from .env.example...
+    echo ⚠️  Environment .env file not found. Creating from .env.example...
     copy .env.example .env
     echo ⚠️  Please update .env with your API keys
 ) else (
-    echo ✅ Frontend .env file exists
-)
-
-if not exist "backend\.env" (
-    echo ⚠️  Backend .env file not found. Creating from .env.example...
-    copy backend\.env.example backend\.env
-    echo ⚠️  Please update backend\.env with your API keys
-) else (
-    echo ✅ Backend .env file exists
+    echo ✅ Environment .env file exists
 )
 
 echo ✅ Environment files configured

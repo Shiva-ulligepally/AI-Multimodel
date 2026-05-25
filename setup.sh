@@ -36,17 +36,17 @@ fi
 echo "✅ Root dependencies installed"
 echo ""
 
-# Install backend dependencies
-echo "📦 Installing backend dependencies..."
-cd backend
+# Install frontend dependencies
+echo "📦 Installing frontend dependencies..."
+cd frontend
 npm install
 
 if [ $? -ne 0 ]; then
-    echo "❌ Failed to install backend dependencies"
+    echo "❌ Failed to install frontend dependencies"
     exit 1
 fi
 
-echo "✅ Backend dependencies installed"
+echo "✅ Frontend dependencies installed"
 cd ..
 echo ""
 
@@ -54,15 +54,9 @@ echo ""
 echo "🔍 Checking environment configuration..."
 
 if [ ! -f ".env" ]; then
-    echo "⚠️  Frontend .env file not found. Creating from .env.example..."
+    echo "⚠️  Environment .env file not found. Creating from .env.example..."
     cp .env.example .env
     echo "⚠️  Please update .env with your API keys"
-fi
-
-if [ ! -f "backend/.env" ]; then
-    echo "⚠️  Backend .env file not found. Creating from .env.example..."
-    cp backend/.env.example backend/.env
-    echo "⚠️  Please update backend/.env with your API keys"
 fi
 
 echo "✅ Environment files configured"

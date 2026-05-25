@@ -7,10 +7,10 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "cd client && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "node api/index.js",
-    "client": "cd client && npm run dev"
+    "server": "node backend/index.js",
+    "client": "cd frontend && npm run dev"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

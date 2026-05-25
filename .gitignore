@@ -1,9 +1,9 @@
 # Dependencies
 node_modules
-client/node_modules
+frontend/node_modules
 
 # Production builds
-client/dist
+frontend/dist
 dist
 
 # Environment Files
@@ -30,7 +30,7 @@ yarn-error.log*
 Thumbs.db
 
 # Local uploads & OCR trained data files
-api/uploads/
+backend/uploads/
 eng.traineddata
 tmp/
 /tmp/
