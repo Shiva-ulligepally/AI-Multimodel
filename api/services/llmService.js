@@ -147,7 +147,7 @@ export const analyzeImage = async (fileName, ocrText) => {
     }
   });
 
-  return generateStructuredJSON(systemInstructions, `File: ${fileName}\nOCR: ${ocrText.substring(0, 5000)}`, mockGenerator);
+  return generateStructuredJSON(systemInstructions, `File: ${fileName}\nOCR: ${(ocrText || '').substring(0, 5000)}`, mockGenerator);
 };
 
 /**
@@ -164,7 +164,7 @@ export const chatWithContext = async (contextType, fileName, contextText, chatHi
   const systemInstructions = `You are DocuMind AI Assistant. Chat about "${fileName}" (${contextType}). Use the file content to answer. If not in file, use broad knowledge but clarify. Be professional and format in Markdown.
 
 FILE CONTENT (first 10000 chars):
-${contextText.substring(0, 10000)}`;
+${(contextText || '').substring(0, 10000)}`;
 
   const prompt = `HISTORY:\n${formattedHistory}\n\nUSER: ${userMessage}\n\nASSISTANT:`;
 

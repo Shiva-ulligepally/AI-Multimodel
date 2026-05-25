@@ -1,6 +1,7 @@
 import UploadedFile from '../models/UploadedFile.js';
 import ChatHistory from '../models/ChatHistory.js';
 import Transcript from '../models/Transcript.js';
+import Summary from '../models/Summary.js';
 import { chatWithContext } from '../services/llmService.js';
 import { extractTextFromDocument } from '../services/documentParser.js';
 
